@@ -7,7 +7,7 @@ struct Student
     int id;
     string firstName;
     string lastName;
-    int grades[3]
+    int grades[3];
 };
 
 // Function declaration
