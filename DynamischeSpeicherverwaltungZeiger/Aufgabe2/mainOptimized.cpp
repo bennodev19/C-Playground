@@ -24,12 +24,14 @@ int main() {
 bool menu(int *values, int maxValueCount, int& currentValuePos){
    int input;
 
-   cout << "-----------------------------" << endl;
+   cout << "--------------------------------" << endl;
    cout << "1. Add Value" << endl;
    cout << "2. Calculate" << endl;
    cout << "3. End" << endl;
-    cout << "-----------------------------" << endl << endl;
+    cout << "-------------------------------" << endl << endl;
    cin >> input;
+
+   clearConsole();
 
    switch (input)
    {
@@ -55,26 +57,41 @@ bool menu(int *values, int maxValueCount, int& currentValuePos){
 
 int getMaxValues(){
     int input = 0;
+    
     cout << "How many values would you like to enter" << endl;
     cin >> input;
+
+    clearConsole();
+
     return input;
 }
 
 bool calculate(int *values, int currentValuePos){
+    
+    int sum = 0;
+    float meanValue;
+   
     if(currentValuePos <= 0){
-        cout << "Please enter some values first!";
+        cout << "-> Please enter some values first!";
         return false;
     }
 
    for(int i = 0; i < currentValuePos; i++){
-       cout << values[i] << endl;
+       sum += values[i];
+       // or sum += *(values + i)
+       // cout << values[i] << endl;
    }
+
+   meanValue = sum / currentValuePos;
+
+   cout << "Your Mean Value is: " << meanValue;
+
    return true;
 }
 
 void addNewValue(int *values, int maxValueCount, int& currentValuePos){
     if(currentValuePos >= maxValueCount){
-       cout << "To many Values entered" << endl;
+       cout << "-> To many Values entered" << endl;
        return;
     }
 
@@ -82,4 +99,9 @@ void addNewValue(int *values, int maxValueCount, int& currentValuePos){
     cin >> values[currentValuePos]; 
     // or *(value + currentValuePos)
     currentValuePos++;
+}
+
+void clearConsole()
+{
+    system("CLEAR");
 }
