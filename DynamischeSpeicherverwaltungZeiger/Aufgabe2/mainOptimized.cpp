@@ -4,19 +4,23 @@
 
 using namespace std;
 
-void addNewValue(int *value, int maxValueCount, int& currentValuePos);
+// & Means that you give a reference of the currentValuePos into the function -> if you change currentValuePos in function it will also change in the main function
+void addNewValue(int *values, int maxValueCount, int& currentValuePos);
 int getMaxValues();
-bool calculate(int *value, int currentValuePos);
+bool calculate(int *values, int currentValuePos);
 bool menu(int *values, int maxValueCount, int& currentValuePos);
+void clearConsole();
 
 int main() {
    int maxValueCount = getMaxValues();
    int currentValuePos = 0;
 
+   // Creates Array with dynamic size druing Runtime
    int *values = new int[maxValueCount];
 
    while(menu(values, maxValueCount, currentValuePos));
 
+   // Clear used space in main memory
    delete[](values);
    values = nullptr;
 }
@@ -79,12 +83,11 @@ bool calculate(int *values, int currentValuePos){
    for(int i = 0; i < currentValuePos; i++){
        sum += values[i];
        // or sum += *(values + i)
-       // cout << values[i] << endl;
    }
 
    meanValue = sum / currentValuePos;
 
-   cout << "Your Mean Value is: " << meanValue;
+   cout << "Your Mean Value is: " << meanValue << endl;
 
    return true;
 }
@@ -96,8 +99,7 @@ void addNewValue(int *values, int maxValueCount, int& currentValuePos){
     }
 
     cout << "Add new Value" << endl;
-    cin >> values[currentValuePos]; 
-    // or *(value + currentValuePos)
+    cin >> values[currentValuePos];  // or *(value + currentValuePos)
     currentValuePos++;
 }
 
