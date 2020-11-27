@@ -7,7 +7,7 @@ using namespace std;
 
 struct Customer
 {
-    int id;
+    string id;
     string name;
 };
 
@@ -22,6 +22,7 @@ bool menuView(Customer *&customers, int &currentCustomerPos);
 void addCustomerView(Customer *&customers, int &currentCustomerPos);
 void customersView(Customer *customers, int &currentCustomerPos);
 void customerView(Customer customer);
+void removeCustomerView(Customer *&, int &currentCustomerPos);
 bool searchCustomerView(Customer *customers, int currentCustomerPos);
 void searchCustomerByNameView(Customer *customers, int currentCustomerPos);
 void searchCustomerByIdView(Customer *customers, int currentCustomerPos);
@@ -34,9 +35,10 @@ void fillCustomersWithDummyData(Customer *&customers, int &currentCustomerPos);
 
 // Logic
 Customer *addCustomer(Customer *customers, int &currentCustomerPos, Customer newCustomer);
-Customer *removeCustomer(Customer *customers, int &currentCustomerPos);
+Customer *removeCustomer(Customer *customers, int &currentCustomerPos, string id);
 FoundCustomers getCustomersByName(Customer *customers, int &currentCustomerPos, string name);
-FoundCustomers getCustomersById(Customer *customers, int &currentCustomerPos, int id);
+FoundCustomers getCustomersById(Customer *customers, int &currentCustomerPos, string id);
+int getCustomerIndexById(Customer *customers, int currentCustomerPos, string id);
 
 int main()
 {
@@ -66,8 +68,9 @@ bool menuView(Customer *&customers, int &currentCustomerPos)
     cout << "-----------------------------------------------" << endl;
     cout << "1. Display Customers" << endl;
     cout << "2. Add Customer" << endl;
-    cout << "3. Search Customer" << endl;
-    cout << "4. End Program" << endl;
+    cout << "3. Remove Customer" << endl;
+    cout << "4. Search Customer" << endl;
+    cout << "5. End Program" << endl;
     cout << "-----------------------------------------------" << endl;
     cout << "Your Input: ";
     cin >> input;
@@ -85,11 +88,15 @@ bool menuView(Customer *&customers, int &currentCustomerPos)
         break;
 
     case 3:
+        removeCustomerView(customers, currentCustomerPos);
+        break;
+
+    case 4:
         while (searchCustomerView(customers, currentCustomerPos))
             ;
         break;
 
-    case 4:
+    case 5:
         return false;
 
     default:
@@ -102,7 +109,7 @@ bool menuView(Customer *&customers, int &currentCustomerPos)
 
 void addCustomerView(Customer *&customers, int &currentCustomerPos)
 {
-    string customerName = "unkown";
+    string name = "unkown";
     string input;
 
     cout << "-----------------------------------------------" << endl;
@@ -110,20 +117,20 @@ void addCustomerView(Customer *&customers, int &currentCustomerPos)
     cout << "-----------------------------------------------" << endl;
     cout << "Customer Name: ";
     cin >> input;
-    customerName = input;
+    name = input;
     cout << "-----------------------------------------------" << endl;
 
     // Create new Customer
     Customer newCustomer;
-    newCustomer.id = currentCustomerPos + 1;
-    newCustomer.name = customerName;
+    newCustomer.id = to_string(currentCustomerPos + 1);
+    newCustomer.name = name;
 
     clearConsole();
     customerView(newCustomer);
-    cout << "Is that correct (y/n)?" << endl;
+    cout << "Is that correct? (y/n)" << endl;
     cin >> input;
 
-    // Add Customer to Customers
+    // Add Customer
     if (input == "y")
     {
         customers = addCustomer(customers, currentCustomerPos, newCustomer);
@@ -133,7 +140,48 @@ void addCustomerView(Customer *&customers, int &currentCustomerPos)
     }
 
     clearConsole();
-    cout << "-> Sucessfully cancled Customer" << endl;
+    cout << "-> Sucessfully cancled creation of Customer" << endl;
+}
+
+void removeCustomerView(Customer *&customers, int &currentCustomerPos)
+{
+    string input;
+    string id;
+
+    cout << "-----------------------------------------------" << endl;
+    cout << "Remove Customer" << endl;
+    cout << "-----------------------------------------------" << endl;
+    cout << "Customer Id: ";
+    cin >> input;
+    id = input;
+    cout << "-----------------------------------------------" << endl;
+
+    clearConsole();
+
+    // Check if Customer exists
+    int index = getCustomerIndexById(customers, currentCustomerPos, id);
+    if (index >= 0)
+    {
+        Customer customerToRemove = customers[index];
+
+        customerView(customerToRemove);
+        cout << "Do you really want to remove this Customer? (y/n)" << endl;
+        cin >> input;
+        clearConsole();
+
+        // Remove Customer
+        if (input == "y")
+        {
+            customers = removeCustomer(customers, currentCustomerPos, id);
+            cout << "-> Sucessfully removed Customer by Id '" << id << "'" << endl;
+            return;
+        }
+
+        cout << "-> Sucessfully cancled deletion of Customer" << endl;
+        return;
+    }
+
+    cout << "Couldn't find Customer by Id '" << input << "'" << endl;
 }
 
 void customersView(Customer *customers, int &currentCustomerPos)
@@ -229,7 +277,7 @@ void searchCustomerByNameView(Customer *customers, int currentCustomerPos)
 
 void searchCustomerByIdView(Customer *customers, int currentCustomerPos)
 {
-    int input;
+    string input;
 
     clearConsole();
     cout << "-----------------------------------------------" << endl;
@@ -278,11 +326,39 @@ Customer *addCustomer(Customer *customers, int &currentCustomerPos, Customer new
     // Release old used Customer Array Main Storage
     delete[](customers);
 
-    // Add new Customer and updated currentCustomerPos
+    // Add new Customer and update currentCustomerPos
     newCustomers[newCustomerPos - 1] = newCustomer;
     currentCustomerPos = newCustomerPos;
 
     return newCustomers;
+}
+
+Customer *removeCustomer(Customer *customers, int &currentCustomerPos, string id)
+{
+    bool removedCustomer = false;
+    int newCustomerPos = currentCustomerPos - 1;
+    Customer *newCustomers = new Customer[newCustomerPos];
+
+    // Filter Customer Array
+    for (int i = 0; i < currentCustomerPos; i++)
+    {
+        if (customers[i].id != id && i < newCustomerPos)
+            newCustomers[i] = customers[i];
+        else
+            removedCustomer = true;
+    }
+
+    // Release old used Customer Array Main Storage and update currentCustomerPos
+    if (removedCustomer)
+    {
+        delete[](customers);
+        currentCustomerPos = newCustomerPos;
+        return newCustomers;
+    }
+
+    // If no Customer Removed return old Customers Pointer
+    delete[](newCustomers);
+    return customers;
 }
 
 FoundCustomers getCustomersByName(Customer *customers, int &currentCustomerPos, string name)
@@ -305,7 +381,7 @@ FoundCustomers getCustomersByName(Customer *customers, int &currentCustomerPos, 
     return finalFoundCustomers;
 }
 
-FoundCustomers getCustomersById(Customer *customers, int &currentCustomerPos, int id)
+FoundCustomers getCustomersById(Customer *customers, int &currentCustomerPos, string id)
 {
     int currentFoundCustomerPos = 0;
     Customer *foundCustomers = new Customer[1];
@@ -323,6 +399,16 @@ FoundCustomers getCustomersById(Customer *customers, int &currentCustomerPos, in
     finalFoundCustomers.customers = foundCustomers;
 
     return finalFoundCustomers;
+}
+
+int getCustomerIndexById(Customer *customers, int currentCustomerPos, string id)
+{
+    for (int i = 0; i < currentCustomerPos; i++)
+    {
+        if (customers[i].id == id)
+            return i;
+    }
+    return -1;
 }
 
 // ==============================================================================
@@ -344,27 +430,27 @@ void outputCustomers(Customer *customers, int currentCustomerPos)
 void fillCustomersWithDummyData(Customer *&customers, int &currentCustomerPos)
 {
     Customer customer1;
-    customer1.id = 1;
+    customer1.id = "1";
     customer1.name = "Hans";
     customers = addCustomer(customers, currentCustomerPos, customer1);
 
     Customer customer2;
-    customer2.id = 2;
+    customer2.id = "2";
     customer2.name = "Dieter";
     customers = addCustomer(customers, currentCustomerPos, customer2);
 
     Customer customer3;
-    customer3.id = 3;
+    customer3.id = "3";
     customer3.name = "Benno";
     customers = addCustomer(customers, currentCustomerPos, customer3);
 
     Customer customer4;
-    customer4.id = 4;
+    customer4.id = "4";
     customer4.name = "Angela";
     customers = addCustomer(customers, currentCustomerPos, customer4);
 
     Customer customer5;
-    customer5.id = 5;
+    customer5.id = "5";
     customer5.name = "Benny";
     customers = addCustomer(customers, currentCustomerPos, customer5);
 }
