@@ -53,6 +53,8 @@ int main()
     // Clear used space in main memory
     delete[](customers);
     customers = nullptr;
+
+    return 0;
 }
 
 // ==============================================================================
@@ -116,8 +118,7 @@ void addCustomerView(Customer *&customers, int &currentCustomerPos)
     cout << "Add Customer" << endl;
     cout << "-----------------------------------------------" << endl;
     cout << "Customer Name: ";
-    cin >> input;
-    name = input;
+    cin >> name;
     cout << "-----------------------------------------------" << endl;
 
     // Create new Customer
@@ -191,7 +192,7 @@ void customersView(Customer *customers, int &currentCustomerPos)
     cout << "-----------------------------------------------" << endl
          << endl;
 
-    // Check if a Customer exist
+    // Check if at least one Customer exist
     if (currentCustomerPos <= 0)
     {
         cout << "-> No Customer found!" << endl;
@@ -342,8 +343,11 @@ Customer *removeCustomer(Customer *customers, int &currentCustomerPos, string id
     // Filter Customer Array
     for (int i = 0; i < currentCustomerPos; i++)
     {
-        if (customers[i].id != id && i < newCustomerPos)
-            newCustomers[i] = customers[i];
+        if ((i == newCustomerPos && !removedCustomer) || i > newCustomerPos)
+            continue;
+
+        if (customers[i].id != id)
+            newCustomers[removedCustomer ? (i - 1) : i] = customers[i];
         else
             removedCustomer = true;
     }
