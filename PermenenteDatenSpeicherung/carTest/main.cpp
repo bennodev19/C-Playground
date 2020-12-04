@@ -12,6 +12,7 @@ struct Car {
 // UI
 bool menuView(Car *&cars, int &currentCarPos, int maxCarCount);
 void addCarView(Car*& cars, int& currentCarPos, int maxCarCount);
+void removeCarView(Car*& cars, int& currentCarPos);
 void carsView(Car* cars, int currentCarPos);
 void carView(Car car);
 void clearConsole();
@@ -21,6 +22,8 @@ void pressEnterToContinue();
 Car* addCar(Car* cars, int& currentCarPos, Car newCar);
 bool exportCars(Car* cars, int currentCarPos, string fileName);
 bool importCars(Car*& cars, int& currentCarPos, string fileName);
+int getCarIndexById(Car* cars, int currentCarPos, int id);
+Car* removeCar(Car* cars, int& currentCarPos, int id);
 
 // Debugging
 void fillCarsWithDummyData(Car*& cars, int& currentCarPos);
@@ -92,7 +95,7 @@ bool menuView(Car*& cars, int& currentCarPos, int maxCarCount) {
 		break;
 
 	case 3:
-		// TODO
+		removeCarView(cars, currentCarPos);
 		break;
 
 	case 4:
@@ -109,7 +112,7 @@ bool menuView(Car*& cars, int& currentCarPos, int maxCarCount) {
 void addCarView(Car*& cars, int& currentCarPos, int maxCarCount) {
 	string input;
 	float price;
-	char brand[10];
+	char brand[20];
 
 	cout << "-----------------------------------------------" << endl;
 	cout << "Add Car" << endl;
@@ -143,6 +146,48 @@ void addCarView(Car*& cars, int& currentCarPos, int maxCarCount) {
 	clearConsole();
 	cout << "-> Sucessfully cancled creation of Customer" << endl;
 }
+
+
+void removeCarView(Car*& cars, int& currentCarPos)
+{
+	string input;
+	int id;
+
+	cout << "-----------------------------------------------" << endl;
+	cout << "Remove Car" << endl;
+	cout << "-----------------------------------------------" << endl;
+	cout << "Car Id: ";
+	cin >> id;
+	cout << "-----------------------------------------------" << endl;
+
+	clearConsole();
+
+	// Check if Car exists
+	int index = getCarIndexById(cars, currentCarPos, id);
+	if (index >= 0)
+	{
+		Car carToRemove = cars[index];
+
+		carView(carToRemove);
+		cout << "Do you really want to remove this Car? (y/n)" << endl;
+		cin >> input;
+		clearConsole();
+
+		// Remove Car
+		if (input == "y")
+		{
+			cars = removeCar(cars, currentCarPos, id);
+			cout << "-> Sucessfully removed Car by Id '" << id << "'" << endl;
+			return;
+		}
+
+		cout << "-> Sucessfully cancled deletion of Car" << endl;
+		return;
+	}
+
+	cout << "Couldn't find Car by Id '" << input << "'" << endl;
+}
+
 
 void carsView(Car* cars, int currentCarPos) {
 	cout << "-----------------------------------------------" << endl;
@@ -284,6 +329,47 @@ Car* addCar(Car* cars, int& currentCarPos, Car newCar)
 	currentCarPos = newCustomerPos;
 
 	return newCars;
+}
+
+Car* removeCar(Car* cars, int& currentCarPos, int id)
+{
+	bool removedCar = false;
+	int newCarPos = currentCarPos - 1;
+	Car* newCars = new Car[newCarPos];
+
+	// Filter Car Array
+	for (int i = 0; i < currentCarPos; i++)
+	{
+		if ((i == newCarPos && !removedCar) || i > newCarPos)
+			continue;
+
+		if (cars[i].id != id)
+			newCars[removedCar ? (i - 1) : i] = cars[i];
+		else
+			removedCar = true;
+	}
+
+	// Release old used Cars Array form the Main Storage and update currentCarPos
+	if (removedCar)
+	{
+		delete[](cars);
+		currentCarPos = newCarPos;
+		return newCars;
+	}
+
+	// If no Car removed return old Car Pointer
+	delete[](newCars);
+	return cars;
+}
+
+int getCarIndexById(Car* cars, int currentCarPos, int id)
+{
+	for (int i = 0; i < currentCarPos; i++)
+	{
+		if (cars[i].id == id)
+			return i;
+	}
+	return -1;
 }
 
 // ==============================================================================

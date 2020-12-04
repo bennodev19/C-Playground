@@ -1,392 +1,460 @@
+// https://lernplattform.mebis.bayern.de/pluginfile.php/33521533/mod_resource/content/1/040_DynamischeSpeicherverwaltungZeiger_V4_Sch%C3%BCler.pdf
+
 #include <iostream>
 #include <string>
 
 using namespace std;
 
-struct Car {
-	int id;
-	char brand[20]; 
-	float price;
+struct Customer
+{
+    string id;
+    string name;
+};
+
+struct FoundCustomers
+{
+    int foundCustomerPos;
+    Customer *customers;
 };
 
 // UI
-bool menuView(Car *&cars, int &currentCarPos, int maxCarCount);
-void addCarView(Car*& cars, int& currentCarPos, int maxCarCount);
-void removeCarView(Car*& cars, int& currentCarPos);
-void carsView(Car* cars, int currentCarPos);
-void carView(Car car);
+bool menuView(Customer *&customers, int &currentCustomerPos);
+void addCustomerView(Customer *&customers, int &currentCustomerPos);
+void customersView(Customer *customers, int &currentCustomerPos);
+void customerView(Customer customer);
+void removeCustomerView(Customer *&customers, int &currentCustomerPos);
+bool searchCustomerView(Customer *customers, int currentCustomerPos);
+void searchCustomerByNameView(Customer *customers, int currentCustomerPos);
+void searchCustomerByIdView(Customer *customers, int currentCustomerPos);
 void clearConsole();
 void pressEnterToContinue();
 
-// Logic
-Car* addCar(Car* cars, int& currentCarPos, Car newCar);
-bool exportCars(Car* cars, int currentCarPos, string fileName);
-bool importCars(Car*& cars, int& currentCarPos, string fileName);
-int getCarIndexById(Car* cars, int currentCarPos, int id);
-Car* removeCar(Car* cars, int& currentCarPos, int id);
-
 // Debugging
-void fillCarsWithDummyData(Car*& cars, int& currentCarPos);
+void outputCustomers(Customer *customers, int currentCustomerPos);
+void fillCustomersWithDummyData(Customer *&customers, int &currentCustomerPos);
 
-const string fileName = "SicherungAlleFahrzeuge.nettmann";
+// Logic
+Customer *addCustomer(Customer *customers, int &currentCustomerPos, Customer newCustomer);
+Customer *removeCustomer(Customer *customers, int &currentCustomerPos, string id);
+FoundCustomers getCustomersByName(Customer *customers, int &currentCustomerPos, string name);
+FoundCustomers getCustomersById(Customer *customers, int &currentCustomerPos, string id);
+int getCustomerIndexById(Customer *customers, int currentCustomerPos, string id);
 
-int main() {
-	int maxCarCount = 100;
-	int currentCarPos = 0;
-	Car* cars = new Car[1];
-
-	locale::global(locale("German"));
-
-	// fillCarsWithDummyData(cars, currentCarPos);
-
-	// Import Cars
-	if (!importCars(cars, currentCarPos, fileName))
-		cerr << "-> Failed to import Cars" << endl;
-	else
-		cout << "-> Successfully imported " << currentCarPos << " Cars" << endl;
-
-	while (menuView(cars, currentCarPos, maxCarCount));
-
-	// Export Cars
-	if (!exportCars(cars, currentCarPos, fileName))
-		cerr << "-> Failed to export Cars" << endl;
-	else
-		cout << "-> Successfully exported " << currentCarPos << " Cars" << endl;
-
-
-	pressEnterToContinue();
-
-	// Clear used space in main memory
-	delete[](cars);
-	cars = nullptr;
-
-	return 0;
-}
-
-bool menuView(Car*& cars, int& currentCarPos, int maxCarCount) {
-	int input;
-
-	cout << "-----------------------------------------------" << endl;
-	cout << "   _   _      _   _                                " << endl;
-	cout << "  | \\ | |    | | | |                              " << endl;
-	cout << "  |  \\| | ___| |_| |_ _ __ ___   __ _ _ __  _ __  " << endl;
-	cout << "  | . ` |/ _ \\ __| __| '_ ` _ \\ / _` | '_ \\| '_ \\ " << endl;
-	cout << "  \\_| \\_/\\___|\\__|\\__|_| |_| |_|\\__,_|_| |_|_| |_|" << endl;
-	cout << "                                                  " << endl;
-
-	cout << "<1> Display Cars" << endl;
-	cout << "<2> Add Car" << endl;
-	cout << "<3> Delete Car" << endl;
-	cout << "<4> End" << endl;
-	cout << "-----------------------------------------------" << endl;
-	cout << "Your Input: ";
-	cin >> input;
-
-	clearConsole();
-
-	switch (input) {
-
-	case 1:
-		carsView(cars, currentCarPos);
-		break;
-
-	case 2:
-		addCarView(cars, currentCarPos, maxCarCount);
-		break;
-
-	case 3:
-		removeCarView(cars, currentCarPos);
-		break;
-
-	case 4:
-		return false;
-
-	default:
-		cerr << endl
-			<< "-> Invalid Input '" << input << "'" << endl;
-	}
-
-	return true;
-}
-
-void addCarView(Car*& cars, int& currentCarPos, int maxCarCount) {
-	string input;
-	float price;
-	char brand[20];
-
-	cout << "-----------------------------------------------" << endl;
-	cout << "Add Car" << endl;
-	cout << "-----------------------------------------------" << endl;
-	cout << "Car Brand: ";
-	cin >> brand;
-	cout << "Car Price: ";
-	cin >> price;
-	cout << "-----------------------------------------------" << endl;
-
-	// Create new Car
-	Car newCar;
-	newCar.id = currentCarPos + 1;
-	strcpy_s(newCar.brand, brand);
-	newCar.price = price;
-
-	clearConsole();
-	carView(newCar);
-	cout << "Is that correct? (y/n)" << endl;
-	cin >> input;
-
-	// Add Car
-	if (input == "y")
-	{
-		cars = addCar(cars, currentCarPos, newCar);
-		clearConsole();
-		cout << "-> Sucessfully added Customer" << endl;
-		return;
-	}
-
-	clearConsole();
-	cout << "-> Sucessfully cancled creation of Customer" << endl;
-}
-
-
-void removeCarView(Car*& cars, int& currentCarPos)
+int main()
 {
-	string input;
-	int id;
+    int currentCustomerPos = 0;
+    Customer *customers = new Customer[1]; // Reserve dummy storage
 
-	cout << "-----------------------------------------------" << endl;
-	cout << "Remove Car" << endl;
-	cout << "-----------------------------------------------" << endl;
-	cout << "Car Id: ";
-	cin >> id;
-	cout << "-----------------------------------------------" << endl;
+    fillCustomersWithDummyData(customers, currentCustomerPos);
 
-	clearConsole();
+    while (menuView(customers, currentCustomerPos))
+        ;
 
-	// Check if Car exists
-	int index = getCarIndexById(cars, currentCarPos, id);
-	if (index >= 0)
-	{
-		Car carToRemove = cars[index];
+    // Clear used space in main memory
+    delete[](customers);
+    customers = nullptr;
 
-		carView(carToRemove);
-		cout << "Do you really want to remove this Car? (y/n)" << endl;
-		cin >> input;
-		clearConsole();
-
-		// Remove Car
-		if (input == "y")
-		{
-			cars = removeCar(cars, currentCarPos, id);
-			cout << "-> Sucessfully removed Car by Id '" << id << "'" << endl;
-			return;
-		}
-
-		cout << "-> Sucessfully cancled deletion of Car" << endl;
-		return;
-	}
-
-	cout << "Couldn't find Car by Id '" << input << "'" << endl;
+    return 0;
 }
 
+// ==============================================================================
+// UI
+// ==============================================================================
 
-void carsView(Car* cars, int currentCarPos) {
-	cout << "-----------------------------------------------" << endl;
-	cout << "Found Cars" << endl;
-	cout << "-----------------------------------------------" << endl
-		<< endl;
-
-	// Check if at least one Car exist
-	if (currentCarPos <= 0)
-	{
-		cout << "-> No Car found!" << endl;
-		pressEnterToContinue();
-		return;
-	}
-
-	for (int i = 0; i < currentCarPos; i++)
-	{
-		carView(cars[i]);
-		cout << endl;
-	}
-	cout << "-----------------------------------------------" << endl;
-	cout << "-> Found " << currentCarPos << (currentCarPos > 1 ? " Cars" : " Car") << endl;
-
-	pressEnterToContinue();
-}
-
-void carView(Car car)
+bool menuView(Customer *&customers, int &currentCustomerPos)
 {
-	cout << "---------------------" << endl;
-	cout << "Id: " << car.id << endl;
-	cout << "Brand: '" << car.brand << "'" << endl;
-	cout << "Price: '" << car.price << "'" << endl;
-	cout << "---------------------" << endl;
+    int input;
+
+    cout << "-----------------------------------------------" << endl;
+    cout << "Customer Manager 2000" << endl;
+    cout << "-----------------------------------------------" << endl;
+    cout << "1. Display Customers" << endl;
+    cout << "2. Add Customer" << endl;
+    cout << "3. Remove Customer" << endl;
+    cout << "4. Search Customer" << endl;
+    cout << "5. End Program" << endl;
+    cout << "-----------------------------------------------" << endl;
+    cout << "Your Input: ";
+    cin >> input;
+
+    clearConsole();
+
+    switch (input)
+    {
+    case 1:
+        customersView(customers, currentCustomerPos);
+        break;
+
+    case 2:
+        addCustomerView(customers, currentCustomerPos);
+        break;
+
+    case 3:
+        removeCustomerView(customers, currentCustomerPos);
+        break;
+
+    case 4:
+        while (searchCustomerView(customers, currentCustomerPos))
+            ;
+        break;
+
+    case 5:
+        return false;
+
+    default:
+        cout << endl
+             << "-> Invalid Input '" << input << "'" << endl;
+    }
+
+    return true;
+}
+
+void addCustomerView(Customer *&customers, int &currentCustomerPos)
+{
+    string name = "unkown";
+    string input;
+
+    cout << "-----------------------------------------------" << endl;
+    cout << "Add Customer" << endl;
+    cout << "-----------------------------------------------" << endl;
+    cout << "Customer Name: ";
+    cin >> name;
+    cout << "-----------------------------------------------" << endl;
+
+    // Create new Customer
+    Customer newCustomer;
+    newCustomer.id = to_string(currentCustomerPos + 1);
+    newCustomer.name = name;
+
+    clearConsole();
+    customerView(newCustomer);
+    cout << "Is that correct? (y/n)" << endl;
+    cin >> input;
+
+    // Add Customer
+    if (input == "y")
+    {
+        customers = addCustomer(customers, currentCustomerPos, newCustomer);
+        clearConsole();
+        cout << "-> Sucessfully added Customer" << endl;
+        return;
+    }
+
+    clearConsole();
+    cout << "-> Sucessfully cancled creation of Customer" << endl;
+}
+
+void removeCustomerView(Customer *&customers, int &currentCustomerPos)
+{
+    string input;
+    string id;
+
+    cout << "-----------------------------------------------" << endl;
+    cout << "Remove Customer" << endl;
+    cout << "-----------------------------------------------" << endl;
+    cout << "Customer Id: ";
+    cin >> input;
+    id = input;
+    cout << "-----------------------------------------------" << endl;
+
+    clearConsole();
+
+    // Check if Customer exists
+    int index = getCustomerIndexById(customers, currentCustomerPos, id);
+    if (index >= 0)
+    {
+        Customer customerToRemove = customers[index];
+
+        customerView(customerToRemove);
+        cout << "Do you really want to remove this Customer? (y/n)" << endl;
+        cin >> input;
+        clearConsole();
+
+        // Remove Customer
+        if (input == "y")
+        {
+            customers = removeCustomer(customers, currentCustomerPos, id);
+            cout << "-> Sucessfully removed Customer by Id '" << id << "'" << endl;
+            return;
+        }
+
+        cout << "-> Sucessfully cancled deletion of Customer" << endl;
+        return;
+    }
+
+    cout << "Couldn't find Customer by Id '" << input << "'" << endl;
+}
+
+void customersView(Customer *customers, int &currentCustomerPos)
+{
+    cout << "-----------------------------------------------" << endl;
+    cout << "Found Customers" << endl;
+    cout << "-----------------------------------------------" << endl
+         << endl;
+
+    // Check if at least one Customer exist
+    if (currentCustomerPos <= 0)
+    {
+        cout << "-> No Customer found!" << endl;
+        pressEnterToContinue();
+        return;
+    }
+
+    for (int i = 0; i < currentCustomerPos; i++)
+    {
+        Customer currentCustomer = customers[i];
+        // or Customer currentCustomer = *(customers + i);
+
+        customerView(currentCustomer);
+        cout << endl;
+    }
+    cout << "-----------------------------------------------" << endl;
+    cout << "-> Found " << currentCustomerPos << (currentCustomerPos > 1 ? " Customers" : " Customer") << endl;
+
+    pressEnterToContinue();
+}
+
+void customerView(Customer customer)
+{
+    cout << "---------------------" << endl;
+    cout << "Id: " << customer.id << endl;
+    cout << "Name: '" << customer.name << "'" << endl;
+    cout << "---------------------" << endl;
+}
+
+bool searchCustomerView(Customer *customers, int currentCustomerPos)
+{
+    int input;
+
+    cout << "-----------------------------------------------" << endl;
+    cout << "Search Customer" << endl;
+    cout << "-----------------------------------------------" << endl;
+    cout << "1. Search By Name" << endl;
+    cout << "2. Search By Id" << endl;
+    cout << "3. Go Back" << endl;
+    cout << "-----------------------------------------------" << endl;
+    cout << "Your Input: ";
+    cin >> input;
+
+    switch (input)
+    {
+    case 1:
+        searchCustomerByNameView(customers, currentCustomerPos);
+        break;
+
+    case 2:
+        searchCustomerByIdView(customers, currentCustomerPos);
+        break;
+
+    case 3:
+        clearConsole();
+        return false;
+
+    default:
+        cout << endl
+             << "-> Invalid Input '" << input << "'" << endl;
+    }
+
+    return true;
+}
+
+void searchCustomerByNameView(Customer *customers, int currentCustomerPos)
+{
+    string input;
+
+    clearConsole();
+    cout << "-----------------------------------------------" << endl;
+    cout << "Search Customer by Name" << endl;
+    cout << "-----------------------------------------------" << endl;
+    cout << "Please Enter the searched Name: ";
+    cin >> input;
+    clearConsole();
+
+    FoundCustomers foundCustomers = getCustomersByName(customers, currentCustomerPos, input);
+
+    customersView(foundCustomers.customers, foundCustomers.foundCustomerPos);
+    delete[](foundCustomers.customers);
+}
+
+void searchCustomerByIdView(Customer *customers, int currentCustomerPos)
+{
+    string input;
+
+    clearConsole();
+    cout << "-----------------------------------------------" << endl;
+    cout << "Search Customer by Id" << endl;
+    cout << "-----------------------------------------------" << endl;
+    cout << "Please Enter the searched Id: ";
+    cin >> input;
+    clearConsole();
+
+    FoundCustomers foundCustomers = getCustomersById(customers, currentCustomerPos, input);
+
+    customersView(foundCustomers.customers, foundCustomers.foundCustomerPos);
+    delete[](foundCustomers.customers);
 }
 
 void clearConsole()
 {
-	system("cls");
+    system("cls");
 }
 
 void pressEnterToContinue()
 {
-	cout << endl
-		<< "Press Enter to Continue\n";
-	cin.ignore(10, '\n');
-	cin.get();
-	clearConsole();
+    cout << endl
+         << "Press Enter to Continue\n";
+    cin.ignore(10, '\n');
+    cin.get();
+    clearConsole();
 }
 
 // ==============================================================================
 // Logic
 // ==============================================================================
 
-bool exportCars(Car* cars, int currentCarPos, string fileName) {
-	FILE* file = nullptr;
-	int carCount = currentCarPos; // Because we are having no leaks in our array currentCarPos === currentCarCount
-
-	// Open File
-	fopen_s(&file, fileName.c_str(), "w");
-
-	// Check if File got sucessfully opened
-	if (file == nullptr) {
-		cerr << "-> Couldn't find file by name '" << fileName << "'" << endl;
-		return false;
-	}
-
-	/* OLD way | saving array based on array size
-	// Write carCount into File
-    fwrite(&currentCarPos, sizeof(int), 1, file);
-	
-	// Write currentCarPos cars into File
-	fwrite(cars, sizeof(Car), currentCarPos, file);
-	*/
-
-	// Write cars into File
-	fwrite(cars, sizeof(Car), currentCarPos, file);
-	
-	// Close File
-	fclose(file);
-
-	return true;
-}
-
-bool importCars(Car*& cars, int& currentCarPos, string fileName) {
-	FILE* file = nullptr;
-
-	// Open File
-	fopen_s(&file, fileName.c_str(), "r");
-
-	// Check if File got sucessfully opened
-	if (file == nullptr) {
-		cerr << "-> Couldn't find file by name '" << fileName << "'" << endl;
-		return false;
-	}
-
-	/* OLD way | reading array based on array size
-	// Read carCount from File
-    fread(&currentCarPos, sizeof(int), 1, file);
-
-	// Read currentCarPos cars from File
-	fread(cars, sizeof(Car), currentCarPos, file);
-	*/
-
-	Car temp;
-
-	// Read cars from File as long the FilePointer hasn't reached the end
-	do {
-		// Read 1 car from File and save it in temp variable to check if its valid
-		fread(&temp, sizeof(Car), 1, file);
-
-		// If FileReader Pointer isn't at the end of the file (eof = end of file)
-		if (!feof(file))
-			cars = addCar(cars, currentCarPos, temp);
-	} while (!feof(file));
-
-	// Close File
-	fclose(file);
-
-	return true;
-}
-
-Car* addCar(Car* cars, int& currentCarPos, Car newCar)
+Customer *addCustomer(Customer *customers, int &currentCustomerPos, Customer newCustomer)
 {
-	int newCustomerPos = currentCarPos + 1;
-	Car* newCars = new Car[newCustomerPos];
+    int newCustomerPos = currentCustomerPos + 1;
+    Customer *newCustomers = new Customer[newCustomerPos];
 
-	// Copy old Car Array into new Customer Array
-	for (int i = 0; i < currentCarPos; i++)
-	{
-		newCars[i] = cars[i];
-		// or *(newCars + i) = *(cars + i);
-	}
+    // Copy old Customer Array into new Customer Array
+    for (int i = 0; i < currentCustomerPos; i++)
+    {
+        newCustomers[i] = customers[i];
+        // or *(newCustomers + i) = *(customers + i);
+    }
 
-	// Release old used Car Array Main Storage
-	delete[](cars);
+    // Release old used Customer Array Main Storage
+    delete[](customers);
 
-	// Add new Customer and update currentCustomerPos
-	newCars[newCustomerPos - 1] = newCar;
-	currentCarPos = newCustomerPos;
+    // Add new Customer and update currentCustomerPos
+    newCustomers[newCustomerPos - 1] = newCustomer;
+    currentCustomerPos = newCustomerPos;
 
-	return newCars;
+    return newCustomers;
 }
 
-Car* removeCar(Car* cars, int& currentCarPos, int id)
+Customer *removeCustomer(Customer *customers, int &currentCustomerPos, string id)
 {
-	bool removedCar = false;
-	int newCarPos = currentCarPos - 1;
-	Car* newCars = new Car[newCarPos];
+    bool removedCustomer = false;
+    int newCustomerPos = currentCustomerPos - 1;
+    Customer *newCustomers = new Customer[newCustomerPos];
 
-	// Filter Car Array
-	for (int i = 0; i < currentCarPos; i++)
-	{
-		if ((i == newCarPos && !removedCar) || i > newCarPos)
-			continue;
+    // Filter Customer Array
+    for (int i = 0; i < currentCustomerPos; i++)
+    {
+        if ((i == newCustomerPos && !removedCustomer) || i > newCustomerPos)
+            continue;
 
-		if (cars[i].id != id)
-			newCars[removedCar ? (i - 1) : i] = cars[i];
-		else
-			removedCar = true;
-	}
+        if (customers[i].id != id)
+            newCustomers[removedCustomer ? (i - 1) : i] = customers[i];
+        else
+            removedCustomer = true;
+    }
 
-	// Release old used Cars Array form the Main Storage and update currentCarPos
-	if (removedCar)
-	{
-		delete[](cars);
-		currentCarPos = newCarPos;
-		return newCars;
-	}
+    // Release old used Customer Array Main Storage and update currentCustomerPos
+    if (removedCustomer)
+    {
+        delete[](customers);
+        currentCustomerPos = newCustomerPos;
+        return newCustomers;
+    }
 
-	// If no Car removed return old Car Pointer
-	delete[](newCars);
-	return cars;
+    // If no Customer Removed return old Customers Pointer
+    delete[](newCustomers);
+    return customers;
 }
 
-int getCarIndexById(Car* cars, int currentCarPos, int id)
+FoundCustomers getCustomersByName(Customer *customers, int &currentCustomerPos, string name)
 {
-	for (int i = 0; i < currentCarPos; i++)
-	{
-		if (cars[i].id == id)
-			return i;
-	}
-	return -1;
+    int currentFoundCustomerPos = 0;
+    Customer *foundCustomers = new Customer[1];
+
+    for (int i = 0; i < currentCustomerPos; i++)
+    {
+        Customer currentCustomer = customers[i];
+        if (currentCustomer.name.rfind(name, 0) == 0)
+            foundCustomers = addCustomer(foundCustomers, currentFoundCustomerPos, currentCustomer);
+    }
+
+    // Build return Value
+    FoundCustomers finalFoundCustomers;
+    finalFoundCustomers.foundCustomerPos = currentFoundCustomerPos;
+    finalFoundCustomers.customers = foundCustomers;
+
+    return finalFoundCustomers;
+}
+
+FoundCustomers getCustomersById(Customer *customers, int &currentCustomerPos, string id)
+{
+    int currentFoundCustomerPos = 0;
+    Customer *foundCustomers = new Customer[1];
+
+    for (int i = 0; i < currentCustomerPos; i++)
+    {
+        Customer currentCustomer = customers[i];
+        if (currentCustomer.id == id)
+            foundCustomers = addCustomer(foundCustomers, currentFoundCustomerPos, currentCustomer);
+    }
+
+    // Build return Value
+    FoundCustomers finalFoundCustomers;
+    finalFoundCustomers.foundCustomerPos = currentFoundCustomerPos;
+    finalFoundCustomers.customers = foundCustomers;
+
+    return finalFoundCustomers;
+}
+
+int getCustomerIndexById(Customer *customers, int currentCustomerPos, string id)
+{
+    for (int i = 0; i < currentCustomerPos; i++)
+    {
+        if (customers[i].id == id)
+            return i;
+    }
+    return -1;
 }
 
 // ==============================================================================
 // Debugging
 // ==============================================================================
 
-void fillCarsWithDummyData(Car*& cars, int& currentCarPos)
+void outputCustomers(Customer *customers, int currentCustomerPos)
 {
-	Car car1;
-	car1.id = 1;
-    strcpy_s(car1.brand, "Audi");
-	car1.price = 1000.8f;
-	cars = addCar(cars, currentCarPos, car1);
+    cout << endl;
+    cout << "-Debugging-----------------" << endl;
+    cout << "-> CurrentCustomerPos: " << currentCustomerPos << endl;
+    for (int i = 0; i < currentCustomerPos; i++)
+    {
+        customerView(customers[i]);
+    }
+    cout << "---------------------------" << endl;
+}
 
-	Car car2;
-	car2.id = 2;
-	strcpy_s(car2.brand, "BMW");
-	car2.price = 2800.0f;
-	cars = addCar(cars, currentCarPos, car2);
+void fillCustomersWithDummyData(Customer *&customers, int &currentCustomerPos)
+{
+    Customer customer1;
+    customer1.id = "1";
+    customer1.name = "Hans";
+    customers = addCustomer(customers, currentCustomerPos, customer1);
+
+    Customer customer2;
+    customer2.id = "2";
+    customer2.name = "Dieter";
+    customers = addCustomer(customers, currentCustomerPos, customer2);
+
+    Customer customer3;
+    customer3.id = "3";
+    customer3.name = "Benno";
+    customers = addCustomer(customers, currentCustomerPos, customer3);
+
+    Customer customer4;
+    customer4.id = "4";
+    customer4.name = "Angela";
+    customers = addCustomer(customers, currentCustomerPos, customer4);
+
+    Customer customer5;
+    customer5.id = "5";
+    customer5.name = "Benny";
+    customers = addCustomer(customers, currentCustomerPos, customer5);
 }
