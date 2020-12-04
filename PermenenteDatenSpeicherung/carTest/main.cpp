@@ -3,89 +3,67 @@
 
 using namespace std;
 
-//Deklaration der Struktur T_Fahrzeug
-struct T_Fahrzeug {
-	int iFahrzID;
-	char acMarke[10]; // nicht den Datentyp string verwenden!!!
-	float fPreis;
+struct Car {
+	int id;
+	char brand[20]; 
+	float price;
 };
 
-//Prototypen
-void ZeigeMenue();
-T_Fahrzeug EingabeFahrzeug(int iAnzahl);
-void AusgabeFahrzeuge(T_Fahrzeug * meineFahrzeuge, int iAnzahl);
-bool ExportFahrzeuge(T_Fahrzeug * meineFahrzeuge, int iAnzahl, string FileName);
-void InitialisierenFahrzeuge(T_Fahrzeug * meineFahrzeuge, int iAnzahlMax);
-int AnzahlFahrzeugeErkunden(T_Fahrzeug * meineFahrzeuge, int iAnzahlMax);
+// UI
+bool menuView(Car *&cars, int &currentCarPos, int maxCarCount);
+void addCarView(Car*& cars, int& currentCarPos, int maxCarCount);
+void carsView(Car* cars, int currentCarPos);
+void carView(Car car);
+void clearConsole();
+void pressEnterToContinue();
+
+// Logic
+Car* addCar(Car* cars, int& currentCarPos, Car newCar);
+bool exportCars(Car* cars, int currentCarPos, string fileName);
+bool importCars(Car*& cars, int& currentCarPos, string fileName);
+
+// Debugging
+void fillCarsWithDummyData(Car*& cars, int& currentCarPos);
+
+const string fileName = "SicherungAlleFahrzeuge.nettmann";
 
 int main() {
-	int iMaxAnzahl = 100;
-	int iAktuelleAnzahl = 0;
-	char cEingabe = ' ';
-	int iEingabe = 0;
+	int maxCarCount = 100;
+	int currentCarPos = 0;
+	Car* cars = new Car[1];
 
 	locale::global(locale("German"));
 
-	const string FileName = "SicherungAlleFahrzeuge.nettmann";
+	// fillCarsWithDummyData(cars, currentCarPos);
 
-	T_Fahrzeug * meineFahrzeuge = new T_Fahrzeug[iMaxAnzahl];
-	InitialisierenFahrzeuge(meineFahrzeuge, iMaxAnzahl);
+	// Import Cars
+	if (!importCars(cars, currentCarPos, fileName))
+		cerr << "-> Failed to import Cars" << endl;
+	else
+		cout << "-> Successfully imported " << currentCarPos << " Cars" << endl;
 
-	do {
-		ZeigeMenue();
-		cin >> iEingabe;
-		switch (iEingabe) {
-		case 1: //Ausgabe der Fahrzeuge
-			if (iAktuelleAnzahl == 0) {
-				cout << "keine Fahrzeuge vorhanden!" << endl;
-			}
-			else {
-				AusgabeFahrzeuge(meineFahrzeuge, iAktuelleAnzahl);
-			}
-			break;
-		case 2: //Fahrzeuge importieren (Datei lesen)
-				// Noch nicht umgesetzt.
-			cout << "Funktion noch nicht vorhanden! ";
-			break;
-		case 3: //Fahrzeug hinzufügen
-			while (iAktuelleAnzahl < iMaxAnzahl)
-			{
-				do {
-					cEingabe = ' ';
-					meineFahrzeuge[iAktuelleAnzahl] = EingabeFahrzeug(iAktuelleAnzahl);
-					iAktuelleAnzahl++;
-					cout << "Möchten Sie ein Fahrzeug hinzufügen? (j/...): ";
-					cin >> cEingabe;
+	while (menuView(cars, currentCarPos, maxCarCount));
 
-				} while (cEingabe == 'j');
-				break;
-			}
-			break;
-		case 4: //fahrzeug loeschen (Falls nicht möglich, dann erscheint Fehlermeldung)
-				// Noch nicht umgesetzt.
-			cout << "Funktion noch nicht vorhanden! ";
-			break;
-		case 5: //alle maximal möglichen Fahrzeuge exportieren (Datei schreiben)
-			if (ExportFahrzeuge(meineFahrzeuge, iMaxAnzahl, FileName) == false) {
-				cout << "Warnung: Fahrzeugexport fehlgeschlagen. " << endl;
-			};
-			break;
-		case 6: //
-			cout << "Auf Wiedersehen " << endl;
-			break;
-		default:
-			cout << "Eingabe ungültig! \a";
-			break;
-		}
-		system("pause");
-	} while (iEingabe != 6);
+	// Export Cars
+	if (!exportCars(cars, currentCarPos, fileName))
+		cerr << "-> Failed to export Cars" << endl;
+	else
+		cout << "-> Successfully exported " << currentCarPos << " Cars" << endl;
+
+
+	pressEnterToContinue();
+
+	// Clear used space in main memory
+	delete[](cars);
+	cars = nullptr;
 
 	return 0;
 }
 
-//Gibt das Menü aus.
-void ZeigeMenue() {
-	system("CLS");
+bool menuView(Car*& cars, int& currentCarPos, int maxCarCount) {
+	int input;
+
+	cout << "-----------------------------------------------" << endl;
 	cout << "   _   _      _   _                                " << endl;
 	cout << "  | \\ | |    | | | |                              " << endl;
 	cout << "  |  \\| | ___| |_| |_ _ __ ___   __ _ _ __  _ __  " << endl;
@@ -93,78 +71,236 @@ void ZeigeMenue() {
 	cout << "  \\_| \\_/\\___|\\__|\\__|_| |_| |_|\\__,_|_| |_|_| |_|" << endl;
 	cout << "                                                  " << endl;
 
-	cout << "<1> Fahrzeuge anzeigen" << endl;
-	cout << "<2> Fahrzeuge importieren" << endl;
-	cout << "<3> Fahrzeug hinzufügen" << endl;
-	cout << "<4> Fahrzeug löschen" << endl;
-	cout << "<5> Fahrzeuge exportieren" << endl;
-	cout << "<6> Programm beenden: " << endl;
-	cout << "Auswahl: ";
-}
+	cout << "<1> Display Cars" << endl;
+	cout << "<2> Add Car" << endl;
+	cout << "<3> Delete Car" << endl;
+	cout << "<4> End" << endl;
+	cout << "-----------------------------------------------" << endl;
+	cout << "Your Input: ";
+	cin >> input;
 
-//Fahrzeugnummer aller Fahrzeuge wird mit 0 initialisiert, um gültige Datensätze von ungültigen zu unterscheiden
-void InitialisierenFahrzeuge(T_Fahrzeug * meineFahrzeuge, int iAnzahlMax)
-{
-	for (int i = 0; i < iAnzahlMax; i++) {
-		meineFahrzeuge[i].iFahrzID = 0;
-		}
-}
+	clearConsole();
 
-//Zählt die Anzahl der aktuell vorhandenen gültigen Datensätze (z. B. nach dem Einlesen aller maximal möglichen Datensätze aus der Datei)
-int AnzahlFahrzeugeErkunden(T_Fahrzeug * meineFahrzeuge, int iAnzahlMax)
-{
-	int iAktuelleAnzahl = 0;
-	for (int i = 0; i < iAnzahlMax; i++) {
-		if(meineFahrzeuge[i].iFahrzID != 0)
-			iAktuelleAnzahl++;
+	switch (input) {
+
+	case 1:
+		carsView(cars, currentCarPos);
+		break;
+
+	case 2:
+		addCarView(cars, currentCarPos, maxCarCount);
+		break;
+
+	case 3:
+		// TODO
+		break;
+
+	case 4:
+		return false;
+
+	default:
+		cerr << endl
+			<< "-> Invalid Input '" << input << "'" << endl;
 	}
-
-	return iAktuelleAnzahl;
-}
-
-//Ermöglicht die Eingabe eines neuen Fahrzeugs
-T_Fahrzeug EingabeFahrzeug(int iAnzahl) {
-
-	T_Fahrzeug Auto;
-	string strEingabe;
-
-	Auto.iFahrzID = iAnzahl + 1;
-	cout << "\tFahrzeug-Nr: " << Auto.iFahrzID << endl;
-	cout << "\tMarke: ";
-	cin >> Auto.acMarke;
-	cout << "\tPreis: ";
-	cin >> Auto.fPreis;
-	cout << endl;
-	return Auto;
-}
-
-//Gibt die Fahrzeuge aus
-void AusgabeFahrzeuge(T_Fahrzeug * meineFahrzeuge, int iAnzahl) {
-
-	cout << endl << "ID \tMarke \tPreis" << endl;
-	for (int i = 0; i < iAnzahl; i++) {
-
-		cout << meineFahrzeuge[i].iFahrzID << "\t";
-		cout << meineFahrzeuge[i].acMarke << "\t";
-		cout << meineFahrzeuge[i].fPreis << " EUR " << endl;
-	}
-	cout << endl;
-}
-
-//Exportiert die Fahrzeuge in eine Datei
-bool ExportFahrzeuge(T_Fahrzeug * meineFahrzeuge, int iAnzahl, string FileName) {
-
-	FILE * fpDatei;
-
-	fopen(&fpDatei, FileName.c_str(), "w"); // TODO 
-	// TODO Prüfen, ob Datei wirklich geöffnet werden konnte
-	fwrite(&iAnzahl, sizeof(int), 1, fpDatei); 
-	
-	fwrite(meineFahrzeuge, sizeof(T_Fahrzeug), iAnzahl, fpDatei);
-
-
-	// TODO DAtei wird nicht geschrieben, da Inhalt nur in Puffer
-	// z.B. durch schließen der Datei
 
 	return true;
+}
+
+void addCarView(Car*& cars, int& currentCarPos, int maxCarCount) {
+	string input;
+	float price;
+	char brand[10];
+
+	cout << "-----------------------------------------------" << endl;
+	cout << "Add Car" << endl;
+	cout << "-----------------------------------------------" << endl;
+	cout << "Car Brand: ";
+	cin >> brand;
+	cout << "Car Price: ";
+	cin >> price;
+	cout << "-----------------------------------------------" << endl;
+
+	// Create new Car
+	Car newCar;
+	newCar.id = currentCarPos + 1;
+	strcpy_s(newCar.brand, brand);
+	newCar.price = price;
+
+	clearConsole();
+	carView(newCar);
+	cout << "Is that correct? (y/n)" << endl;
+	cin >> input;
+
+	// Add Car
+	if (input == "y")
+	{
+		cars = addCar(cars, currentCarPos, newCar);
+		clearConsole();
+		cout << "-> Sucessfully added Customer" << endl;
+		return;
+	}
+
+	clearConsole();
+	cout << "-> Sucessfully cancled creation of Customer" << endl;
+}
+
+void carsView(Car* cars, int currentCarPos) {
+	cout << "-----------------------------------------------" << endl;
+	cout << "Found Cars" << endl;
+	cout << "-----------------------------------------------" << endl
+		<< endl;
+
+	// Check if at least one Car exist
+	if (currentCarPos <= 0)
+	{
+		cout << "-> No Car found!" << endl;
+		pressEnterToContinue();
+		return;
+	}
+
+	for (int i = 0; i < currentCarPos; i++)
+	{
+		carView(cars[i]);
+		cout << endl;
+	}
+	cout << "-----------------------------------------------" << endl;
+	cout << "-> Found " << currentCarPos << (currentCarPos > 1 ? " Cars" : " Car") << endl;
+
+	pressEnterToContinue();
+}
+
+void carView(Car car)
+{
+	cout << "---------------------" << endl;
+	cout << "Id: " << car.id << endl;
+	cout << "Brand: '" << car.brand << "'" << endl;
+	cout << "Price: '" << car.price << "'" << endl;
+	cout << "---------------------" << endl;
+}
+
+void clearConsole()
+{
+	system("cls");
+}
+
+void pressEnterToContinue()
+{
+	cout << endl
+		<< "Press Enter to Continue\n";
+	cin.ignore(10, '\n');
+	cin.get();
+	clearConsole();
+}
+
+// ==============================================================================
+// Logic
+// ==============================================================================
+
+bool exportCars(Car* cars, int currentCarPos, string fileName) {
+	FILE* file = nullptr;
+	int carCount = currentCarPos; // Because we are having no leaks in our array currentCarPos === currentCarCount
+
+	// Open File
+	fopen_s(&file, fileName.c_str(), "w");
+
+	// Check if File got sucessfully opened
+	if (file == nullptr) {
+		cerr << "-> Couldn't find file by name '" << fileName << "'" << endl;
+		return false;
+	}
+
+	/* OLD way | saving array based on array size
+	// Write carCount into File
+    fwrite(&currentCarPos, sizeof(int), 1, file);
+	
+	// Write currentCarPos cars into File
+	fwrite(cars, sizeof(Car), currentCarPos, file);
+	*/
+
+	// Write cars into File
+	fwrite(cars, sizeof(Car), currentCarPos, file);
+	
+	// Close File
+	fclose(file);
+
+	return true;
+}
+
+bool importCars(Car*& cars, int& currentCarPos, string fileName) {
+	FILE* file = nullptr;
+
+	// Open File
+	fopen_s(&file, fileName.c_str(), "r");
+
+	// Check if File got sucessfully opened
+	if (file == nullptr) {
+		cerr << "-> Couldn't find file by name '" << fileName << "'" << endl;
+		return false;
+	}
+
+	/* OLD way | reading array based on array size
+	// Read carCount from File
+    fread(&currentCarPos, sizeof(int), 1, file);
+
+	// Read currentCarPos cars from File
+	fread(cars, sizeof(Car), currentCarPos, file);
+	*/
+
+	Car temp;
+
+	// Read cars from File as long the FilePointer hasn't reached the end
+	do {
+		// Read 1 car from File and save it in temp variable to check if its valid
+		fread(&temp, sizeof(Car), 1, file);
+
+		// If FileReader Pointer isn't at the end of the file (eof = end of file)
+		if (!feof(file))
+			cars = addCar(cars, currentCarPos, temp);
+	} while (!feof(file));
+
+	// Close File
+	fclose(file);
+
+	return true;
+}
+
+Car* addCar(Car* cars, int& currentCarPos, Car newCar)
+{
+	int newCustomerPos = currentCarPos + 1;
+	Car* newCars = new Car[newCustomerPos];
+
+	// Copy old Car Array into new Customer Array
+	for (int i = 0; i < currentCarPos; i++)
+	{
+		newCars[i] = cars[i];
+		// or *(newCars + i) = *(cars + i);
+	}
+
+	// Release old used Car Array Main Storage
+	delete[](cars);
+
+	// Add new Customer and update currentCustomerPos
+	newCars[newCustomerPos - 1] = newCar;
+	currentCarPos = newCustomerPos;
+
+	return newCars;
+}
+
+// ==============================================================================
+// Debugging
+// ==============================================================================
+
+void fillCarsWithDummyData(Car*& cars, int& currentCarPos)
+{
+	Car car1;
+	car1.id = 1;
+    strcpy_s(car1.brand, "Audi");
+	car1.price = 1000.8f;
+	cars = addCar(cars, currentCarPos, car1);
+
+	Car car2;
+	car2.id = 2;
+	strcpy_s(car2.brand, "BMW");
+	car2.price = 2800.0f;
+	cars = addCar(cars, currentCarPos, car2);
 }
